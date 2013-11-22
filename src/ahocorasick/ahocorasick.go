@@ -74,7 +74,7 @@ func (m *Matcher) getFreeNode() *node {
 }
 
 // buildTrie builds the fundamental trie structure from a set of
-// blices.
+// slices.
 func (m *Matcher) buildTrie(dictionary [][]byte) {
 
 	// Work out the maximum size for the trie (all dictionary entries
@@ -195,7 +195,7 @@ func NewStringMatcher(dictionary []string) *Matcher {
 // indexes into the original dictionary
 func (m *Matcher) Match(in []byte) []int {
 	m.counter += 1
-	hits := make([]int, 0)
+	var hits []int
 
 	n := &m.trie[0]
 

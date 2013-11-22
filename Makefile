@@ -10,13 +10,16 @@ BUILD_DEPS := go
 .PHONY: all
 all: $(NAME)
 
+GCFLAGS := -B
+LDFLAGS := 
+
 .PHONY: test
 test:
-	@go test $(NAME)
+	@go test -gcflags='$(GCFLAGS)' -ldflags='$(LDFLAGS)' $(NAME)
 
 .PHONY: bench
 bench:
-	@go test -bench . $(NAME)
+	@go test -gcflags='$(GCFLAGS)' -ldflags='$(LDFLAGS)' -bench . $(NAME)
 
 .PHONY: print-builddeps
 print-builddeps:

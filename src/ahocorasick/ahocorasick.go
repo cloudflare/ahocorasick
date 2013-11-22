@@ -160,6 +160,8 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 			}
 		}
 	}
+
+	m.trie = m.trie[:m.extent]
 }
 
 // NewMatcher creates a new Matcher used to match against a set of

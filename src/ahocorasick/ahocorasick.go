@@ -44,8 +44,7 @@ type node struct {
 // Matcher is returned by NewMatcher and contains a list of blices to
 // match against
 type Matcher struct {
-	root    *node // Points to the root of the trie
-	counter int   // Counts the number of matches done, and is used to
+	counter int // Counts the number of matches done, and is used to
 	// prevent output of multiple matches of the same string
 	trie []node // preallocated block of memory containing all the
 	// nodes
@@ -56,7 +55,7 @@ type Matcher struct {
 // returns a pointer to the node representing the end of the blice. If
 // the blice is not found it returns nil.
 func (m *Matcher) findBlice(b []byte) *node {
-	n := m.root
+	n := &m.trie[0]
 
 	for n != nil && len(b) > 0 {
 		n = n.child[int(b[0])]
@@ -88,13 +87,16 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	}
 	m.trie = make([]node, max)
 
-	m.root = m.getFreeNode()
+	// Calling this an ignoring its argument simply allocated
+	// m.trie[0] which will be the root element
+
+	m.getFreeNode()
 
 	// This loop builds the nodes in the trie by following through
 	// each dictionary entry building the children pointers.
 
 	for i, blice := range dictionary {
-		n := m.root
+		n := &m.trie[0]
 		path := make([]byte, 0)
 		for _, b := range blice {
 			path = append(path, b)
@@ -112,10 +114,10 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 				// possible.
 
 				if len(path) == 1 {
-					c.fail = m.root
+					c.fail = &m.trie[0]
 				}
 
-				c.suffix = m.root
+				c.suffix = &m.trie[0]
 			}
 
 			n = c
@@ -129,7 +131,7 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	}
 
 	l := new(list.List)
-	l.PushBack(m.root)
+	l.PushBack(&m.trie[0])
 
 	for l.Len() > 0 {
 		n := l.Remove(l.Front()).(*node)
@@ -147,7 +149,7 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 				}
 
 				if c.fail == nil {
-					c.fail = m.root
+					c.fail = &m.trie[0]
 				}
 
 				for j := 1; j < len(c.b); j++ {
@@ -195,12 +197,12 @@ func (m *Matcher) Match(in []byte) []int {
 	m.counter += 1
 	hits := make([]int, 0)
 
-	n := m.root
+	n := &m.trie[0]
 
 	for _, b := range in {
 		c := int(b)
 
-		for n.child[c] == nil && n != m.root {
+		for n.child[c] == nil && n != &m.trie[0] {
 			n = n.fail
 		}
 
@@ -213,7 +215,7 @@ func (m *Matcher) Match(in []byte) []int {
 				f.counter = m.counter
 			}
 
-			for f.suffix != m.root {
+			for f.suffix != &m.trie[0] {
 				f = f.suffix
 				if f.counter != m.counter {
 					hits = append(hits, f.index)

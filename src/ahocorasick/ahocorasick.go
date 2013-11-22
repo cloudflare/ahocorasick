@@ -195,7 +195,7 @@ func NewStringMatcher(dictionary []string) *Matcher {
 // indexes into the original dictionary
 func (m *Matcher) Match(in []byte) []int {
 	m.counter += 1
-	hits := make([]int, 0)
+	var hits []int
 
 	n := &m.trie[0]
 

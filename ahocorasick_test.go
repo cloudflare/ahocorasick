@@ -5,6 +5,7 @@
 package ahocorasick
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -178,6 +179,14 @@ func BenchmarkContainsWorks(b *testing.B) {
 	}
 }
 
+var re = regexp.MustCompile("(" + strings.Join(dictionary, "|") + ")")
+
+func BenchmarkRegexpWorks(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re.FindAllIndex(bytes, -1)
+	}
+}
+
 var dictionary2 = []string{"Googlebot", "bingbot", "msnbot", "Yandex", "Baiduspider"}
 var precomputed2 = NewStringMatcher(dictionary2)
 
@@ -195,6 +204,14 @@ func BenchmarkContainsFails(b *testing.B) {
 				hits = append(hits, i)
 			}
 		}
+	}
+}
+
+var re2 = regexp.MustCompile("(" + strings.Join(dictionary2, "|") + ")")
+
+func BenchmarkRegexpFails(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re2.FindAllIndex(bytes, -1)
 	}
 }
 
@@ -221,6 +238,14 @@ func BenchmarkLongContainsWorks(b *testing.B) {
 	}
 }
 
+var re3 = regexp.MustCompile("(" + strings.Join(dictionary3, "|") + ")")
+
+func BenchmarkLongRegexpWorks(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re3.FindAllIndex(bytes2, -1)
+	}
+}
+
 var dictionary4 = []string{"12343453", "34353", "234234523", "324234", "33333"}
 var precomputed4 = NewStringMatcher(dictionary4)
 
@@ -238,6 +263,14 @@ func BenchmarkLongContainsFails(b *testing.B) {
 				hits = append(hits, i)
 			}
 		}
+	}
+}
+
+var re4 = regexp.MustCompile("(" + strings.Join(dictionary4, "|") + ")")
+
+func BenchmarkLongRegexpFails(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re4.FindAllIndex(bytes2, -1)
 	}
 }
 
@@ -261,6 +294,14 @@ func BenchmarkContainsMany(b *testing.B) {
 	}
 }
 
+var re5 = regexp.MustCompile("(" + strings.Join(dictionary5, "|") + ")")
+
+func BenchmarkRegexpMany(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re5.FindAllIndex(bytes, -1)
+	}
+}
+
 func BenchmarkLongMatchMany(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		precomputed5.Match(bytes2)
@@ -275,5 +316,11 @@ func BenchmarkLongContainsMany(b *testing.B) {
 				hits = append(hits, i)
 			}
 		}
+	}
+}
+
+func BenchmarkLongRegexpMany(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re5.FindAllIndex(bytes2, -1)
 	}
 }

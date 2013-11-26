@@ -15,6 +15,8 @@ import (
 
 // A node in the trie structure used to implement Aho-Corasick
 type node struct {
+	root bool // true if this is the root
+
 	b []byte // The blice at this node
 
 	output bool // True means this node represents a blice that should
@@ -22,7 +24,7 @@ type node struct {
 	index int // index into original dictionary if output is true
 
 	counter int // Set to the value of the Matcher.counter when a
-	// match is output to prevent duplicates output
+	// match is output to prevent duplicate output
 
 	// The use of fixed size arrays is space-inefficient but fast for
 	// lookups.
@@ -32,6 +34,9 @@ type node struct {
 	// appended to the current node. Blices in the
 	// trie are built up byte by byte through these
 	// child node pointers.
+
+	fails [256]*node // Where to fail to (by following the fail
+	// pointers) for each possible byte
 
 	suffix *node // Pointer to the longest possible strict suffix of
 	// this node
@@ -48,7 +53,8 @@ type Matcher struct {
 	// prevent output of multiple matches of the same string
 	trie []node // preallocated block of memory containing all the
 	// nodes
-	extent int // offset into trie that is currently free
+	extent int   // offset into trie that is currently free
+	root   *node // Points to trie[0]
 }
 
 // finndBlice looks for a blice in the trie starting from the root and
@@ -69,6 +75,11 @@ func (m *Matcher) findBlice(b []byte) *node {
 // pool and updates the extent to point to the next free node.
 func (m *Matcher) getFreeNode() *node {
 	m.extent += 1
+
+	if m.extent == 1 {
+		m.root = &m.trie[0]
+		m.root.root = true
+	}
 
 	return &m.trie[m.extent-1]
 }
@@ -96,8 +107,8 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	// each dictionary entry building the children pointers.
 
 	for i, blice := range dictionary {
-		n := &m.trie[0]
-		path := make([]byte, 0)
+		n := m.root
+		var path []byte
 		for _, b := range blice {
 			path = append(path, b)
 
@@ -114,10 +125,10 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 				// possible.
 
 				if len(path) == 1 {
-					c.fail = &m.trie[0]
+					c.fail = m.root
 				}
 
-				c.suffix = &m.trie[0]
+				c.suffix = m.root
 			}
 
 			n = c
@@ -131,7 +142,7 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	}
 
 	l := new(list.List)
-	l.PushBack(&m.trie[0])
+	l.PushBack(m.root)
 
 	for l.Len() > 0 {
 		n := l.Remove(l.Front()).(*node)
@@ -149,7 +160,7 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 				}
 
 				if c.fail == nil {
-					c.fail = &m.trie[0]
+					c.fail = m.root
 				}
 
 				for j := 1; j < len(c.b); j++ {
@@ -160,6 +171,17 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 					}
 				}
 			}
+		}
+	}
+
+	for i := 0; i < m.extent; i++ {
+		for c := 0; c < 256; c++ {
+			n := &m.trie[i]
+			for n.child[c] == nil && !n.root {
+				n = n.fail
+			}
+
+			m.trie[i].fails[c] = n
 		}
 	}
 
@@ -181,7 +203,7 @@ func NewMatcher(dictionary [][]byte) *Matcher {
 func NewStringMatcher(dictionary []string) *Matcher {
 	m := new(Matcher)
 
-	d := make([][]byte, 0)
+	var d [][]byte
 	for _, s := range dictionary {
 		d = append(d, []byte(s))
 	}
@@ -197,13 +219,13 @@ func (m *Matcher) Match(in []byte) []int {
 	m.counter += 1
 	var hits []int
 
-	n := &m.trie[0]
+	n := m.root
 
 	for _, b := range in {
 		c := int(b)
 
-		for n.child[c] == nil && n != &m.trie[0] {
-			n = n.fail
+		if !n.root && n.child[c] == nil {
+			n = n.fails[c]
 		}
 
 		if n.child[c] != nil {
@@ -215,7 +237,7 @@ func (m *Matcher) Match(in []byte) []int {
 				f.counter = m.counter
 			}
 
-			for f.suffix != &m.trie[0] {
+			for !f.suffix.root {
 				f = f.suffix
 				if f.counter != m.counter {
 					hits = append(hits, f.index)

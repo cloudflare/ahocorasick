@@ -243,11 +243,9 @@ func (m *Matcher) Match(in []byte) []int {
 					hits = append(hits, f.index)
 					f.counter = m.counter
 				} else {
-
 					// There's no point working our way up the
 					// suffixes if it's been done before for this call
 					// to Match. The matches are already in hits.
-
 					break
 				}
 			}
@@ -255,4 +253,31 @@ func (m *Matcher) Match(in []byte) []int {
 	}
 
 	return hits
+}
+
+// This returns true if any string matches.  It can be faster if you
+// do not need to know which words matched.
+
+func (m *Matcher) Contains(in []byte) bool {
+	n := m.root
+	for _, b := range in {
+		c := int(b)
+		if !n.root && n.child[c] == nil {
+			n = n.fails[c]
+		}
+
+		if n.child[c] != nil {
+			f := n.child[c]
+			n = f
+
+			if f.output {
+				return true
+			}
+
+			for !f.suffix.root {
+				return true
+			}
+		}
+	}
+	return false
 }

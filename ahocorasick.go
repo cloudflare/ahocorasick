@@ -9,9 +9,7 @@
 
 package ahocorasick
 
-import (
-	"container/list"
-)
+import "container/list"
 
 // A node in the trie structure used to implement Aho-Corasick
 type node struct {
@@ -255,4 +253,30 @@ func (m *Matcher) Match(in []byte) []int {
 	}
 
 	return hits
+}
+
+// Contains returns true if any string matches. This can be faster
+// than Match() when you do not need to know which words matched.
+func (m *Matcher) Contains(in []byte) bool {
+	n := m.root
+	for _, b := range in {
+		c := int(b)
+		if !n.root {
+			n = n.fails[c]
+		}
+
+		if n.child[c] != nil {
+			f := n.child[c]
+			n = f
+
+			if f.output {
+				return true
+			}
+
+			for !f.suffix.root {
+				return true
+			}
+		}
+	}
+	return false
 }

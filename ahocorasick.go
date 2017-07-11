@@ -57,7 +57,7 @@ type Matcher struct {
 	root   *node // Points to trie[0]
 }
 
-// finndBlice looks for a blice in the trie starting from the root and
+// findBlice looks for a blice in the trie starting from the root and
 // returns a pointer to the node representing the end of the blice. If
 // the blice is not found it returns nil.
 func (m *Matcher) findBlice(b []byte) *node {

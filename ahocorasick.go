@@ -221,7 +221,7 @@ func (m *Matcher) Match(in []byte) []int {
 
 	n := m.root
 
-	for _, b := range in {
+	for idx, b := range in {
 		c := int(b)
 
 		if !n.root && n.child[c] == nil {
@@ -233,7 +233,7 @@ func (m *Matcher) Match(in []byte) []int {
 			n = f
 
 			if f.output && f.counter != m.counter {
-				hits = append(hits, f.index)
+				hits = append(hits, idx)
 				f.counter = m.counter
 			}
 

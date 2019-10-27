@@ -1,0 +1,28 @@
+language: go
+
+os:
+ - linux
+ - osx
+ - windows
+# You don't need to test on very old versions of the Go compiler. It's the user's
+# responsibility to keep their compiler up to date.
+go:
+ - 1.13.x
+ - 1.12.x
+
+# Only clone the most recent commit.
+git:
+  depth: 1
+
+# Don't email me the results of the test runs.
+notifications:
+  email: false
+
+# script always runs to completion (set +e). If we have linter issues AND a
+# failing test, we want to see both. Configure golangci-lint with a
+# .golangci.yml file at the top level of your repo.
+script:
+  - go clean
+  - go build
+  - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...  # Run all the tests with the race detector enabled
+  - go test -bench=. -benchmem ./... # Run all the benchmark for 3s and print memory information

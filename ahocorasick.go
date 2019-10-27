@@ -15,16 +15,12 @@ import (
 
 // A node in the trie structure used to implement Aho-Corasick
 type node struct {
-	root bool // true if this is the root
-
-	b []byte // The blice at this node
-
-	output bool // True means this node represents a blice that should
-	// be output when matching
 	index int // index into original dictionary if output is true
 
 	counter int // Set to the value of the Matcher.counter when a
 	// match is output to prevent duplicate output
+
+	b []byte // The blice at this node
 
 	// The use of fixed size arrays is space-inefficient but fast for
 	// lookups.
@@ -44,6 +40,9 @@ type node struct {
 	fail *node // Pointer to the next node which is in the dictionary
 	// which can be reached from here following suffixes. Called fail
 	// because it is used to fallback in the trie when a match fails.
+	root   bool // true if this is the root
+	output bool // True means this node represents a blice that should
+	// be output when matching
 }
 
 // Matcher is returned by NewMatcher and contains a list of blices to
@@ -74,7 +73,7 @@ func (m *Matcher) findBlice(b []byte) *node {
 // getFreeNode: gets a free node structure from the Matcher's trie
 // pool and updates the extent to point to the next free node.
 func (m *Matcher) getFreeNode() *node {
-	m.extent += 1
+	m.extent++
 
 	if m.extent == 1 {
 		m.root = &m.trie[0]
@@ -87,7 +86,6 @@ func (m *Matcher) getFreeNode() *node {
 // buildTrie builds the fundamental trie structure from a set of
 // blices.
 func (m *Matcher) buildTrie(dictionary [][]byte) {
-
 	// Work out the maximum size for the trie (all dictionary entries
 	// are distinct plus the root). This is used to preallocate memory
 	// for it.
@@ -203,9 +201,9 @@ func NewMatcher(dictionary [][]byte) *Matcher {
 func NewStringMatcher(dictionary []string) *Matcher {
 	m := new(Matcher)
 
-	var d [][]byte
-	for _, s := range dictionary {
-		d = append(d, []byte(s))
+	d := make([][]byte, len(dictionary))
+	for i := range dictionary {
+		d[i] = []byte(dictionary[i])
 	}
 
 	m.buildTrie(d)
@@ -216,7 +214,7 @@ func NewStringMatcher(dictionary []string) *Matcher {
 // Match searches in for blices and returns all the blices found as
 // indexes into the original dictionary
 func (m *Matcher) Match(in []byte) []int {
-	m.counter += 1
+	m.counter++
 	var hits []int
 
 	n := m.root

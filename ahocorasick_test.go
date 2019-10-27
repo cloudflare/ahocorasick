@@ -29,8 +29,13 @@ func TestNoData(t *testing.T) {
 }
 
 func TestSuffixes(t *testing.T) {
-	m := NewStringMatcher([]string{"Superman", "uperman", "perman", "erman"})
+	dict := []string{"Superman", "uperman", "perman", "erman"}
+	m := NewStringMatcher(dict)
 	hits := m.Match([]byte("The Man Of Steel: Superman"))
+	t.Log(hits)
+	for _, item := range hits {
+		t.Log(dict[item])
+	}
 	assert(t, len(hits) == 4)
 	assert(t, hits[0] == 0)
 	assert(t, hits[1] == 1)
@@ -49,8 +54,13 @@ func TestPrefixes(t *testing.T) {
 }
 
 func TestInterior(t *testing.T) {
-	m := NewStringMatcher([]string{"Steel", "tee", "e"})
+	dict := []string{"Steel", "tee", "e"}
+	m := NewStringMatcher(dict)
 	hits := m.Match([]byte("The Man Of Steel: Superman"))
+	t.Log(hits)
+	for _, item := range hits {
+		t.Log(dict[item])
+	}
 	assert(t, len(hits) == 3)
 	assert(t, hits[2] == 0)
 	assert(t, hits[1] == 1)
@@ -130,8 +140,14 @@ func TestWikipedia(t *testing.T) {
 }
 
 func TestMatch(t *testing.T) {
-	m := NewStringMatcher([]string{"Mozilla", "Mac", "Macintosh", "Safari", "Sausage"})
+	dict := []string{"Mozilla", "Mac", "Macintosh", "Safari", "Sausage"}
+	m := NewStringMatcher(dict)
 	hits := m.Match([]byte("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"))
+	t.Log(hits)
+	t.Log(dict)
+	for _, item := range hits {
+		t.Log(dict[item])
+	}
 	assert(t, len(hits) == 4)
 	assert(t, hits[0] == 0)
 	assert(t, hits[1] == 1)

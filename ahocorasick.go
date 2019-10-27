@@ -97,17 +97,17 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	// This loop builds the nodes in the trie by following through
 	// each dictionary entry building the children pointers.
 
-	for i, blice := range dictionary {
+	for j := range dictionary {
 		n := m.root
-		path := make([]byte, len(blice))
+		path := make([]byte, len(dictionary[j]))
 		counter := 0
-		for i := range blice {
-			path[i] = blice[i]
+		for i := range dictionary[j] {
+			path[i] = dictionary[j][i]
 			counter++
-			c := n.child[int(blice[i])]
+			c := n.child[int(dictionary[j][i])]
 			if c == nil {
 				c = m.getFreeNode()
-				n.child[int(blice[i])] = c
+				n.child[int(dictionary[j][i])] = c
 				c.b = make([]byte, counter)
 				copy(c.b, path[0:counter])
 				// Nodes directly under the root node will have the
@@ -123,7 +123,7 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 		// The last value of n points to the node representing a
 		// dictionary entry
 		n.output = true
-		n.index = i
+		n.index = j
 	}
 
 	l := new(list.List)

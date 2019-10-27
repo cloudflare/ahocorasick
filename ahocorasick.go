@@ -107,14 +107,14 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	for i, blice := range dictionary {
 		n := m.root
 		var path []byte
-		for _, b := range blice {
-			path = append(path, b)
+		for i := range blice {
+			path = append(path, blice[i])
 
-			c := n.child[int(b)]
+			c := n.child[int(blice[i])]
 
 			if c == nil {
 				c = m.getFreeNode()
-				n.child[int(b)] = c
+				n.child[int(blice[i])] = c
 				c.b = make([]byte, len(path))
 				copy(c.b, path)
 

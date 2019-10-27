@@ -99,19 +99,21 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 
 	for i, blice := range dictionary {
 		n := m.root
-		var path []byte
+		path := make([]byte, len(blice))
+		counter := 0
 		for i := range blice {
-			path = append(path, blice[i])
+			path[i] = blice[i]
+			counter++
 			c := n.child[int(blice[i])]
 			if c == nil {
 				c = m.getFreeNode()
 				n.child[int(blice[i])] = c
-				c.b = make([]byte, len(path))
-				copy(c.b, path)
+				c.b = make([]byte, counter)
+				copy(c.b, path[0:counter])
 				// Nodes directly under the root node will have the
 				// root as their fail point as there are no suffixes
 				// possible.
-				if len(path) == 1 {
+				if counter == 1 {
 					c.fail = m.root
 				}
 				c.suffix = m.root

@@ -48,12 +48,12 @@ type node struct {
 // Matcher is returned by NewMatcher and contains a list of blices to
 // match against
 type Matcher struct {
-	counter int // Counts the number of matches done, and is used to
+	trie    []node // preallocated block of memory containing all the nodes
+	counter int    // Counts the number of matches done, and is used to
 	// prevent output of multiple matches of the same string
-	trie []node // preallocated block of memory containing all the
-	// nodes
-	extent int   // offset into trie that is currently free
-	root   *node // Points to trie[0]
+	extent int // offset into trie that is currently free
+
+	root *node // Points to trie[0]
 }
 
 // finndBlice looks for a blice in the trie starting from the root and
@@ -61,12 +61,10 @@ type Matcher struct {
 // the blice is not found it returns nil.
 func (m *Matcher) findBlice(b []byte) *node {
 	n := &m.trie[0]
-
 	for n != nil && len(b) > 0 {
 		n = n.child[int(b[0])]
 		b = b[1:]
 	}
-
 	return n
 }
 
@@ -74,12 +72,10 @@ func (m *Matcher) findBlice(b []byte) *node {
 // pool and updates the extent to point to the next free node.
 func (m *Matcher) getFreeNode() *node {
 	m.extent++
-
 	if m.extent == 1 {
 		m.root = &m.trie[0]
 		m.root.root = true
 	}
-
 	return &m.trie[m.extent-1]
 }
 
@@ -89,18 +85,15 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 	// Work out the maximum size for the trie (all dictionary entries
 	// are distinct plus the root). This is used to preallocate memory
 	// for it.
-
 	max := 1
-	for _, blice := range dictionary {
-		max += len(blice)
+	for i := range dictionary {
+		max += len(dictionary[i])
 	}
 	m.trie = make([]node, max)
 
 	// Calling this an ignoring its argument simply allocated
 	// m.trie[0] which will be the root element
-
 	m.getFreeNode()
-
 	// This loop builds the nodes in the trie by following through
 	// each dictionary entry building the children pointers.
 
@@ -109,58 +102,45 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 		var path []byte
 		for i := range blice {
 			path = append(path, blice[i])
-
 			c := n.child[int(blice[i])]
-
 			if c == nil {
 				c = m.getFreeNode()
 				n.child[int(blice[i])] = c
 				c.b = make([]byte, len(path))
 				copy(c.b, path)
-
 				// Nodes directly under the root node will have the
 				// root as their fail point as there are no suffixes
 				// possible.
-
 				if len(path) == 1 {
 					c.fail = m.root
 				}
-
 				c.suffix = m.root
 			}
-
 			n = c
 		}
-
 		// The last value of n points to the node representing a
 		// dictionary entry
-
 		n.output = true
 		n.index = i
 	}
 
 	l := new(list.List)
 	l.PushBack(m.root)
-
 	for l.Len() > 0 {
 		n := l.Remove(l.Front()).(*node)
-
 		for i := 0; i < 256; i++ {
 			c := n.child[i]
 			if c != nil {
 				l.PushBack(c)
-
 				for j := 1; j < len(c.b); j++ {
 					c.fail = m.findBlice(c.b[j:])
 					if c.fail != nil {
 						break
 					}
 				}
-
 				if c.fail == nil {
 					c.fail = m.root
 				}
-
 				for j := 1; j < len(c.b); j++ {
 					s := m.findBlice(c.b[j:])
 					if s != nil && s.output {
@@ -190,9 +170,7 @@ func (m *Matcher) buildTrie(dictionary [][]byte) {
 // blices
 func NewMatcher(dictionary [][]byte) *Matcher {
 	m := new(Matcher)
-
 	m.buildTrie(dictionary)
-
 	return m
 }
 
@@ -200,14 +178,11 @@ func NewMatcher(dictionary [][]byte) *Matcher {
 // of strings (this is a helper to make initialization easy)
 func NewStringMatcher(dictionary []string) *Matcher {
 	m := new(Matcher)
-
 	d := make([][]byte, len(dictionary))
 	for i := range dictionary {
 		d[i] = []byte(dictionary[i])
 	}
-
 	m.buildTrie(d)
-
 	return m
 }
 
@@ -216,41 +191,32 @@ func NewStringMatcher(dictionary []string) *Matcher {
 func (m *Matcher) Match(in []byte) []int {
 	m.counter++
 	var hits []int
-
 	n := m.root
-
-	for _, b := range in {
-		c := int(b)
-
+	for i := range in {
+		c := int(in[i])
 		if !n.root && n.child[c] == nil {
 			n = n.fails[c]
 		}
-
 		if n.child[c] != nil {
 			f := n.child[c]
 			n = f
-
 			if f.output && f.counter != m.counter {
 				hits = append(hits, f.index)
 				f.counter = m.counter
 			}
-
 			for !f.suffix.root {
 				f = f.suffix
 				if f.counter != m.counter {
 					hits = append(hits, f.index)
 					f.counter = m.counter
 				} else {
-
 					// There's no point working our way up the
 					// suffixes if it's been done before for this call
 					// to Match. The matches are already in hits.
-
 					break
 				}
 			}
 		}
 	}
-
 	return hits
 }

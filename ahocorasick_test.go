@@ -225,7 +225,7 @@ func TestWikipediaConcurrently(t *testing.T) {
 }
 
 func TestMatch(t *testing.T) {
-	m := NewStringMatcher([]string{"Mozilla", "Mac", "Macintosh", "Safari", "Sausage"})
+	m := NewStringMatcher(dictionary)
 	hits := m.Match([]byte("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"))
 	assert(t, len(hits) == 4)
 	assert(t, hits[0] == 0)
@@ -312,6 +312,20 @@ func TestLargeDictionaryMatchThreadSafeWorks(t *testing.T) {
 	 */
 	hits := precomputed6.MatchThreadSafe(bytes2)
 	assert(t, len(hits) == 105)
+
+}
+
+func TestContains(t *testing.T) {
+	m := NewStringMatcher(dictionary)
+	contains := m.Contains([]byte("Mozilla/5.0 (Moc; Intel Computer OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Sofari/537.36"))
+	assert(t, contains)
+
+	contains = m.Contains([]byte("Mazilla/5.0 (Moc; Intel Computer OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Sofari/537.36"))
+	assert(t, !contains)
+
+	m = NewStringMatcher([]string{"SupermanX", "per"})
+	contains = m.Contains([]byte("The Man Of Steel: Superman"))
+	assert(t, contains == true)
 }
 
 var bytes = []byte("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36")
